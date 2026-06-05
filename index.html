@@ -206,18 +206,25 @@
 
 position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(4px);}
   .loading-overlay.hidden{display:none;}
+  .hidden{display:none !important;}
   .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
   .loading-text{font-family:var(--display);font-weight:800;color:var(--purple);font-size:14px;}
 
   /* ONBOARDING */
-  .onboard-overlay{position:fixed;inset:0;background:rgba(17,17,24,.6);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-  .onboard-overlay.hidden{display:none;}
-  .onboard-box{background:var(--surface);border-radius:20px;padding:36px;width:400px;max-width:90vw;box-shadow:var(--shadow-md);text-align:center;}
-  .onboard-logo{background:var(--purple);color:#fff;font-family:var(--display);font-size:18px;font-weight:900;padding:8px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;}
-  .onboard-title{font-family:var(--display);font-size:20px;font-weight:900;color:var(--black);margin-bottom:8px;}
-  .onboard-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5;}
-  .onboard-box input{text-align:center;font-size:15px;font-weight:700;}
+  .login-overlay{position:fixed;inset:0;background:rgba(17,17,24,.7);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+  .login-overlay.hidden{display:none;}
+  .login-box{background:var(--surface);border-radius:20px;padding:40px;width:420px;max-width:92vw;box-shadow:var(--shadow-md);text-align:center;}
+  .login-logo{background:var(--purple);color:#fff;font-family:var(--display);font-size:18px;font-weight:900;padding:8px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;}
+  .login-title{font-family:var(--display);font-size:22px;font-weight:900;color:var(--black);margin-bottom:6px;}
+  .login-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5;}
+  .login-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
+  .login-form label{font-size:11px;color:var(--text2);font-family:var(--display);text-transform:uppercase;letter-spacing:.7px;font-weight:800;margin-bottom:2px;}
+  .login-form input{width:100%;padding:11px 14px;font-size:14px;}
+  .login-error{background:rgba(255,61,107,.08);border:1.5px solid rgba(255,61,107,.2);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--red);font-weight:700;display:none;margin-top:4px;}
+  .login-error.show{display:block;}
+  .pw-input-wrap{position:relative;}
+  .pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;}
 
   /* TABS dentro del detalle */
   .detail-tabs{display:flex;gap:2px;background:var(--surface2);padding:3px;border-radius:9px;margin-bottom:16px;}
@@ -234,14 +241,51 @@ position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex
   <div class="loading-text">Conectando con la nube...</div>
 </div>
 
-<!-- ONBOARDING: pedir nombre -->
-<div class="onboard-overlay" id="onboard-overlay">
-  <div class="onboard-box">
-    <div class="onboard-logo">🖐 Handy POS Tracker</div>
-    <div class="onboard-title">¡Hola! ¿Cómo te llamás?</div>
-    <div class="onboard-sub">Tu nombre va a quedar registrado en cada acción que hagas dentro del tracker.</div>
-    <input type="text" id="onboard-name" placeholder="Tu nombre..." style="margin-bottom:16px;width:100%;" maxlength="30">
-    <button class="btn-primary" style="width:100%;padding:12px;" onclick="saveUsername()">Entrar al tracker →</button>
+<!-- LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box" id="login-screen">
+    <div class="login-logo">🖐 Handy POS Tracker</div>
+    <div class="login-title">Bienvenido</div>
+    <div class="login-sub">Ingresá con tu usuario y contraseña</div>
+    <div class="login-form">
+      <div>
+        <label>Usuario</label>
+        <input type="text" id="login-user" placeholder="Tu nombre de usuario" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+      </div>
+      <div>
+        <label>Contraseña</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="login-pass" placeholder="Tu contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pw-toggle" onclick="togglePw('login-pass',this)">👁</button>
+        </div>
+      </div>
+      <div class="login-error" id="login-error">Usuario o contraseña incorrectos</div>
+      <button class="btn-primary" style="width:100%;padding:12px;margin-top:4px;" onclick="doLogin()">Ingresar →</button>
+    </div>
+  </div>
+
+  <div class="login-box hidden" id="change-pw-screen">
+    <div class="login-logo">🖐 Handy POS Tracker</div>
+    <div class="login-title">Elegí tu contraseña</div>
+    <div class="login-sub">Es tu primera vez ingresando. Creá una contraseña personal para tu cuenta.</div>
+    <div class="login-form">
+      <div>
+        <label>Nueva contraseña</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="new-pw1" placeholder="Mínimo 6 caracteres">
+          <button class="pw-toggle" onclick="togglePw('new-pw1',this)">👁</button>
+        </div>
+      </div>
+      <div>
+        <label>Repetir contraseña</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="new-pw2" placeholder="Repetí la contraseña" onkeydown="if(event.key==='Enter')doChangePw()">
+          <button class="pw-toggle" onclick="togglePw('new-pw2',this)">👁</button>
+        </div>
+      </div>
+      <div class="login-error" id="changepw-error">Las contraseñas no coinciden</div>
+      <button class="btn-primary" style="width:100%;padding:12px;margin-top:4px;" onclick="doChangePw()">Guardar y entrar →</button>
+    </div>
   </div>
 </div>
 
@@ -252,7 +296,7 @@ position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex
     <div class="brand-sub">POS TRACKER</div>
   </div>
   <div class="header-right">
-    <div class="user-chip" onclick="changeUser()" title="Cambiar nombre">👤 <span id="username-display">—</span></div>
+    <div class="user-chip" onclick="changeUser()" title="Cerrar sesión">👤 <span id="username-display">—</span></div>
     <div class="sync-status loading" id="sync-status">Sincronizando</div>
     <div class="header-tabs">
       <button class="tab-btn active" id="tab-sol" onclick="switchTab('solicitudes')">📋 Solicitudes</button>
@@ -455,40 +499,128 @@ const JSONBIN_URL = 'https://api.jsonbin.io/v3';
 
 let solicitudes = [], terminales = [];
 let editingId = null, detailId = null, tDetailId = null;
-let currentUser = localStorage.getItem('handy_username') || '';
 
 const STATUSES = ['recibida','preparacion','despacho','enviada','entregada'];
 const STATUS_LABELS = {recibida:'Recibida',preparacion:'En preparación',despacho:'Lista p/ despacho',enviada:'Enviada',entregada:'Entregada'};
 const STATUS_CLASS  = {recibida:'s-recibida',preparacion:'s-preparacion',despacho:'s-despacho',enviada:'s-enviada',entregada:'s-entregada'};
 
-// ── USUARIO ───────────────────────────────────────────────
-function initUser() {
-  if (!currentUser) {
-    document.getElementById('onboard-overlay').classList.remove('hidden');
+// ── USUARIOS Y LOGIN ──────────────────────────────────────
+const DEFAULT_PW = 'Reso2026**';
+const USERS = ['Pablo','Nicolas','Joaquin','Marcia','Nicole','Candelaria'];
+
+let currentUser = localStorage.getItem('handy_username') || '';
+let loginUser = '';
+
+// contraseñas se guardan en JSONBin dentro del record
+// estructura: record.passwords = { Pablo: 'hash', ... }
+// usamos btoa como ofuscación simple (no es criptografía real)
+function hashPw(pw){ return btoa(unescape(encodeURIComponent(pw))); }
+function checkPw(pw, stored){ return hashPw(pw) === stored; }
+
+function togglePw(inputId, btn){
+  const el = document.getElementById(inputId);
+  if(el.type==='password'){ el.type='text'; btn.textContent='🙈'; }
+  else { el.type='password'; btn.textContent='👁'; }
+}
+
+function showLoginError(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+async function doLogin(){
+  const userInput = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if(!userInput){ showLoginError('login-error','Ingresá tu usuario'); return; }
+  if(!pass){ showLoginError('login-error','Ingresá tu contraseña'); return; }
+
+  // buscar usuario sin distinguir mayúsculas
+  const user = USERS.find(u => u.toLowerCase() === userInput.toLowerCase());
+  if(!user){ showLoginError('login-error','Usuario no encontrado'); return; }
+
+  // leer contraseñas desde la nube
+  let record;
+  try { record = await readBin(); } catch(e){ record = {}; }
+  const passwords = record.passwords || {};
+
+  // si no tiene contraseña guardada aún, la default es Reso2026**
+  const storedPw = passwords[user] || hashPw(DEFAULT_PW);
+  const isDefault = !passwords[user]; // true si nunca cambió
+
+  if(!checkPw(pass, storedPw)){
+    showLoginError('login-error','Usuario o contraseña incorrectos');
+    return;
+  }
+
+  loginUser = user;
+
+  if(isDefault){
+    // primera vez — pedir cambio de contraseña
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('change-pw-screen').classList.remove('hidden');
   } else {
-    document.getElementById('onboard-overlay').classList.add('hidden');
+    // login normal
+    completeLogin(record);
+  }
+}
+
+async function doChangePw(){
+  const pw1 = document.getElementById('new-pw1').value;
+  const pw2 = document.getElementById('new-pw2').value;
+  if(pw1.length < 6){ showLoginError('changepw-error','Mínimo 6 caracteres'); return; }
+  if(pw1 !== pw2){ showLoginError('changepw-error','Las contraseñas no coinciden'); return; }
+  if(pw1 === DEFAULT_PW){ showLoginError('changepw-error','Elegí una contraseña diferente a la inicial'); return; }
+
+  // guardar nueva contraseña en la nube
+  let record;
+  try { record = await readBin(); } catch(e){ record = {solicitudes:[],terminales:[]}; }
+  if(!record.passwords) record.passwords = {};
+  record.passwords[loginUser] = hashPw(pw1);
+  try { await writeBin(record); } catch(e){}
+
+  completeLogin(record);
+}
+
+function completeLogin(record){
+  currentUser = loginUser;
+  localStorage.setItem('handy_username', currentUser);
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('username-display').textContent = currentUser;
+  solicitudes = record.solicitudes || [];
+  terminales  = record.terminales  || [];
+  hideLoading();
+  renderAll();
+  setSyncStatus('ok','Conectado');
+}
+
+function initUser(){
+  const saved = localStorage.getItem('handy_username');
+  if(saved && USERS.includes(saved)){
+    currentUser = saved;
+    document.getElementById('login-overlay').classList.add('hidden');
     document.getElementById('username-display').textContent = currentUser;
     syncFromCloud();
+  } else {
+    localStorage.removeItem('handy_username');
+    document.getElementById('login-overlay').classList.remove('hidden');
+    hideLoading();
   }
 }
-function saveUsername() {
-  const name = document.getElementById('onboard-name').value.trim();
-  if (!name) { alert('Por favor ingresá tu nombre.'); return; }
-  currentUser = name;
-  localStorage.setItem('handy_username', name);
-  document.getElementById('username-display').textContent = name;
-  document.getElementById('onboard-overlay').classList.add('hidden');
-  syncFromCloud();
-}
-function changeUser() {
-  if (confirm('¿Cambiar de usuario?')) {
+
+function changeUser(){
+  if(confirm('¿Cerrar sesión?')){
     localStorage.removeItem('handy_username');
     currentUser = '';
-    document.getElementById('onboard-overlay').classList.remove('hidden');
-    document.getElementById('onboard-name').value = '';
+    loginUser = '';
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('change-pw-screen').classList.add('hidden');
+    document.getElementById('login-overlay').classList.remove('hidden');
   }
 }
-document.getElementById('onboard-name').addEventListener('keydown', e => { if(e.key==='Enter') saveUsername(); });
 
 // ── JSONBIN ───────────────────────────────────────────────
 async function readBin() {
@@ -514,8 +646,9 @@ async function syncFromCloud() {
     setSyncStatus('error','Sin conexión');
     solicitudes = JSON.parse(localStorage.getItem('handy_sol_bk')||'[]');
     terminales  = JSON.parse(localStorage.getItem('handy_ter_bk')||'[]');
+  } finally {
+    hideLoading();
   }
-  hideLoading();
   renderAll();
 }
 async function saveToCloud() {
@@ -993,6 +1126,8 @@ async function toggleTerminalStatus(status){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ── INIT ──────────────────────────────────────────────────
+// timeout de seguridad: si en 6 segundos no cerró el loading, lo cerramos igual
+setTimeout(()=>hideLoading(), 6000);
 initUser();
 </script>
 </body>
