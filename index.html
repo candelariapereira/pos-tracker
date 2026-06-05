@@ -897,15 +897,16 @@ async function saveSolicitud(){
       }
     });
     const modeloActual=document.getElementById('f-modelo').value;
+    const appActual=document.getElementById('f-tiene-app').checked?document.getElementById('f-app').value:'';
     solicitudes[idx]={...s,ticket,comercio,direccion,
       contacto:document.getElementById('f-contacto').value.trim(),telefono:document.getElementById('f-telefono').value.trim(),
-      qty,modelo:modeloActual,
+      qty,modelo:modeloActual,app:appActual,
       notas:document.getElementById('f-notas').value.trim()};
     logActivity(editingId,'editó la solicitud');
     // actualizar terminales vinculadas con los nuevos datos
     terminales.forEach((t,i)=>{
       if(t.solicitudId===editingId){
-        terminales[i]={...t,comercio,direccion,ticket,modelo:modeloActual};
+        terminales[i]={...t,comercio,direccion,ticket,modelo:modeloActual,app:appActual};
       }
     });
   } else {
