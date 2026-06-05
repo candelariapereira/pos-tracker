@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POS Tracker · Handy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --bg:#f4f3fa;--surface:#fff;--surface2:#f0edf9;--border:#e2daf5;
+    --purple:#6c3be8;--purple-dark:#4e22c4;--purple-light:#ede8fc;--purple-mid:#9b6ef3;
+    --black:#111118;--text:#1a1a2e;--text2:#6b6b8a;--text3:#a8a8c0;
+    --green:#00c98d;--orange:#ff8c2a;--red:#ff3d6b;--blue:#2a7fff;
+    --sans:'Nunito Sans',sans-serif;--display:'Nunito',sans-serif;
+    --radius:12px;--shadow:0 2px 12px rgba(108,59,232,.08);--shadow-md:0 4px 24px rgba(108,59,232,.13);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;}
+
+  /* HEADER */
+  .header{background:var(--surface);border-bottom:2px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+  .header-brand{display:flex;align-items:center;gap:10px;}
+  .brand-logo{background:var(--purple);color:#fff;font-family:var(--display);font-size:15px;font-weight:900;padding:5px 12px;border-radius:8px;display:flex;align-items:center;gap:6px;}
+  .brand-divider{width:1px;height:22px;background:var(--border);margin:0 4px;}
+  .brand-sub{font-family:var(--display);font-size:13px;font-weight:800;color:var(--purple);}
+  .header-right{display:flex;align-items:center;gap:12px;}
+  .user-chip{display:flex;align-items:center;gap:6px;background:var(--purple-light);border:1.5px solid var(--border);border-radius:20px;padding:4px 12px;font-family:var(--display);font-size:12px;font-weight:800;color:var(--purple);cursor:pointer;}
+  .user-chip:hover{border-color:var(--purple);}
+  .sync-status{font-size:11px;font-family:var(--display);font-weight:700;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;}
+  .sync-status.ok{background:rgba(0,201,141,.1);color:var(--green);}
+  .sync-status.loading{background:rgba(108,59,232,.1);color:var(--purple);}
+  .sync-status.error{background:rgba(255,61,107,.1);color:var(--red);}
+  .sync-status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .sync-status.loading::before{animation:blink .8s infinite;}
+  .header-tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px;}
+  .tab-btn{background:none;border:none;cursor:pointer;padding:7px 18px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text2);transition:all .15s;}
+  .tab-btn.active{background:var(--purple);color:#fff;box-shadow:0 2px 8px rgba(108,59,232,.3);}
+  .tab-btn:hover:not(.active){color:var(--purple);background:var(--purple-light);}
+
+  .view{display:none;padding:24px 28px;}
+  .view.active{display:block;}
+
+  /* STATS */
+  .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{background:var(--surface);border-radius:var(--radius);padding:16px 18px;border:1.5px solid var(--border);box-shadow:var(--shadow);}
+  .stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:4px;}
+  .stat-value{font-family:var(--display);font-size:28px;font-weight:900;}
+  .stat-value.purple{color:var(--purple);}.stat-value.orange{color:var(--orange);}
+  .stat-value.blue{color:var(--blue);}.stat-value.green{color:var(--green);}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .search-box{flex:1;min-width:200px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s;box-shadow:var(--shadow);}
+  .search-box:focus{border-color:var(--purple);}
+  .search-box::placeholder{color:var(--text3);}
+  .filter-select{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;cursor:pointer;box-shadow:var(--shadow);}
+  .btn-primary{background:var(--purple);color:#fff;border:none;cursor:pointer;padding:9px 18px;border-radius:10px;font-family:var(--display);font-size:13px;font-weight:800;transition:all .15s;white-space:nowrap;box-shadow:0 3px 10px rgba(108,59,232,.3);}
+  .btn-primary:hover{background:var(--purple-dark);transform:translateY(-1px);}
+
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto;box-shadow:var(--shadow);}
+  table{width:100%;border-collapse:collapse;min-width:720px;}
+  thead tr{background:var(--purple);}
+  th{padding:11px 14px;text-align:left;font-size:11px;font-family:var(--display);color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.8px;font-weight:800;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--purple-light);}
+  td{padding:12px 14px;font-size:13px;}
+  .ticket-id{font-size:12px;color:var(--purple);font-weight:700;background:var(--purple-light);padding:2px 8px;border-radius:5px;}
+  .comercio-name{font-weight:700;color:var(--black);}
+  .qty-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--purple);color:#fff;border-radius:6px;padding:2px 9px;font-family:var(--display);font-size:13px;font-weight:800;min-width:30px;}
+  .serial-progress{font-size:11px;font-family:var(--display);font-weight:700;}
+  .serial-progress.done{color:var(--green);}
+  .serial-progress.partial{color:var(--orange);}
+  .serial-progress.empty{color:var(--text3);}
+
+  /* STATUS PILLS */
+  .status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:800;font-family:var(--display);text-transform:uppercase;letter-spacing:.4px;border:1.5px solid transparent;white-space:nowrap;}
+  .status-pill::before{content:'';width:6px;height:6px;border-radius:50%;}
+  .s-recibida{background:rgba(42,127,255,.1);color:var(--blue);border-color:rgba(42,127,255,.2);}
+  .s-recibida::before{background:var(--blue);}
+  .s-preparacion{background:rgba(255,140,42,.1);color:var(--orange);border-color:rgba(255,140,42,.2);}
+  .s-preparacion::before{background:var(--orange);animation:blink 1.2s infinite;}
+  .s-despacho{background:rgba(108,59,232,.1);color:var(--purple);border-color:rgba(108,59,232,.25);}
+  .s-despacho::before{background:var(--purple);}
+  .s-enviada{background:rgba(0,201,141,.1);color:var(--green);border-color:rgba(0,201,141,.2);}
+  .s-enviada::before{background:var(--green);}
+  .s-entregada{background:rgba(0,201,141,.07);color:#00a374;border-color:rgba(0,201,141,.15);}
+  .s-entregada::before{background:#00a374;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .action-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:4px 11px;color:var(--text2);font-size:11px;font-family:var(--display);font-weight:700;cursor:pointer;transition:all .1s;}
+  .action-btn:hover{color:var(--purple);border-color:var(--purple);background:var(--purple-light);}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(17,17,24,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;width:600px;max-width:95vw;padding:28px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md);}
+  .modal-wide{width:720px;}
+  .modal-title{font-family:var(--display);font-size:17px;font-weight:900;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;color:var(--black);}
+  .modal-close{background:var(--surface2);border:none;cursor:pointer;color:var(--text2);font-size:18px;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .modal-close:hover{background:var(--purple-light);color:var(--purple);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  label{font-size:11px;color:var(--text2);font-family:var(--display);text-transform:uppercase;letter-spacing:.7px;font-weight:800;}
+  input,select,textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s;}
+  input:focus,select:focus,textarea:focus{border-color:var(--purple);background:#fff;}
+  textarea{resize:vertical;min-height:72px;}
+  .model-tag{background:var(--purple-light);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;font-family:var(--display);font-size:12px;font-weight:800;color:var(--purple);}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+  .btn-secondary{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:9px 16px;color:var(--text2);font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-secondary:hover{border-color:var(--purple);color:var(--purple);}
+  .btn-danger{background:rgba(255,61,107,.08);border:1.5px solid rgba(255,61,107,.25);border-radius:9px;padding:9px 16px;color:var(--red);font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;}
+
+  /* STEPPER */
+  .stepper{display:flex;margin:18px 0;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);}
+  .step{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-family:var(--display);color:var(--text3);background:var(--surface2);cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.3px;font-weight:700;border-right:1px solid var(--border);}
+  .step:last-child{border-right:none;}
+  .step.done{background:var(--purple-light);color:var(--purple);}
+  .step.current{background:var(--purple);color:#fff;font-weight:900;}
+  .step:hover:not(.current){background:var(--purple-light);color:var(--purple);}
+
+  /* DETAIL */
+  .detail-section{margin-bottom:18px;}
+  .detail-section-title{font-family:var(--display);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px;padding-bottom:7px;border-bottom:1.5px solid var(--border);font-weight:800;display:flex;justify-content:space-between;align-items:center;}
+  .detail-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;gap:12px;}
+  .detail-key{color:var(--text2);font-size:12px;font-weight:600;}
+  .detail-val{font-weight:700;font-size:13px;text-align:right;color:var(--black);}
+  .notas-box{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-size:12px;color:var(--text2);line-height:1.6;margin-top:6px;}
+
+  /* SERIALES */
+  .serial-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .serial-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;}
+  .serial-item .sn{font-family:var(--display);font-size:13px;font-weight:800;color:var(--purple);}
+  .serial-item .sn-meta{font-size:11px;color:var(--text3);}
+  .serial-item .sn-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0 4px;}
+  .serial-item .sn-del:hover{color:var(--red);}
+  .add-serial-row{display:flex;gap:8px;margin-top:8px;}
+  .add-serial-row input{flex:1;}
+  .serial-counter{font-family:var(--display);font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;}
+  .sc-ok{background:rgba(0,201,141,.12);color:var(--green);}
+  .sc-partial{background:rgba(255,140,42,.12);color:var(--orange);}
+  .sc-empty{background:var(--surface2);color:var(--text3);}
+
+  /* HISTORIAL ACTIVIDAD */
+  .activity-list{display:flex;flex-direction:column;gap:0;}
+  .activity-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:flex-start;}
+  .activity-item:last-child{border-bottom:none;}
+  .activity-avatar{width:26px;height:26px;border-radius:50%;background:var(--purple);color:#fff;font-family:var(--display);font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .activity-body{flex:1;}
+  .activity-user{font-weight:700;color:var(--black);}
+  .activity-action{color:var(--text2);}
+  .activity-date{font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0;}
+
+  /* TERMINALES */
+  .monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
+  .terminal-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+  .terminal-card:hover{border-color:var(--purple);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .terminal-card.t-inactiva{opacity:.55;}
+  .terminal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .terminal-serial{font-size:11px;color:var(--text2);font-weight:700;background:var(--surface2);padding:2px 8px;border-radius:5px;}
+  .terminal-ticket{font-size:10px;color:var(--purple);font-weight:700;background:var(--purple-light);padding:2px 7px;border-radius:5px;}
+  .active-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--display);font-weight:800;}
+  .active-dot::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;}
+  .active-dot.on{color:var(--green);}
+  .active-dot.on::before{background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 2s infinite;}
+  .active-dot.off{color:var(--text3);}
+  .active-dot.off::before{background:var(--text3);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .terminal-comercio{font-family:var(--display);font-weight:900;font-size:15px;margin-bottom:4px;color:var(--black);}
+  .terminal-info{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.4;}
+  .terminal-footer{display:flex;justify-content:space-between;align-items:center;}
+  .issue-count{font-size:11px;font-family:var(--display);font-weight:800;display:flex;align-items:center;gap:4px;}
+  .issue-count.has{color:var(--red);}.issue-count.none{color:var(--text3);}
+
+  .history-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;}
+  .history-item:last-child{border-bottom:none;}
+  .h-date{color:var(--text3);font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+  .h-text{color:var(--text2);flex:1;line-height:1.4;}
+  .h-sev{padding:2px 8px;border-radius:5px;font-size:10px;font-family:var(--display);font-weight:800;flex-shrink:0;}
+  .sev-alto{background:rgba(255,61,107,.12);color:var(--red);}
+  .sev-medio{background:rgba(255,140,42,.12);color:var(--orange);}
+  .sev-info{background:rgba(0,201,141,.1);color:var(--green);}
+
+  .add-issue-row{display:flex;gap:8px;margin-top:10px;}
+  .add-issue-row input{flex:1;}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text3);font-family:var(--display);font-size:14px;font-weight:700;}
+  .empty-state span{display:block;font-size:32px;margin-bottom:8px;}
+
+  .confirm-box{background:rgba(255,61,107,.06);border:1.5px solid rgba(255,61,107,.2);border-radius:10px;padding:14px 16px;margin-top:14px;font-size:12px;color:var(--text2);display:none;font-weight:600;}
+  .confirm-box.show{display:block;}
+
+  /* LOADING */
+  .audit-user-chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--display);font-weight:800;font-size:12px;}
+  .audit-avatar{width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-family:var(--display);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .audit-action{font-size:13px;color:var(--text);}
+  .audit-action strong{color:var(--purple);}
+  .audit-tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-family:var(--display);font-weight:800;}
+  .tag-creo{background:rgba(0,201,141,.1);color:var(--green);}
+  .tag-estado{background:rgba(108,59,232,.1);color:var(--purple);}
+  .tag-serial{background:rgba(255,140,42,.1);color:var(--orange);}
+  .tag-edito{background:rgba(42,127,255,.1);color:var(--blue);}
+  .tag-elimino{background:rgba(255,61,107,.1);color:var(--red);}
+
+position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(4px);}
+  .loading-overlay.hidden{display:none;}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-family:var(--display);font-weight:800;color:var(--purple);font-size:14px;}
+
+  /* ONBOARDING */
+  .onboard-overlay{position:fixed;inset:0;background:rgba(17,17,24,.6);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .onboard-overlay.hidden{display:none;}
+  .onboard-box{background:var(--surface);border-radius:20px;padding:36px;width:400px;max-width:90vw;box-shadow:var(--shadow-md);text-align:center;}
+  .onboard-logo{background:var(--purple);color:#fff;font-family:var(--display);font-size:18px;font-weight:900;padding:8px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;}
+  .onboard-title{font-family:var(--display);font-size:20px;font-weight:900;color:var(--black);margin-bottom:8px;}
+  .onboard-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5;}
+  .onboard-box input{text-align:center;font-size:15px;font-weight:700;}
+
+  /* TABS dentro del detalle */
+  .detail-tabs{display:flex;gap:2px;background:var(--surface2);padding:3px;border-radius:9px;margin-bottom:16px;}
+  .detail-tab{flex:1;background:none;border:none;cursor:pointer;padding:6px;border-radius:7px;font-family:var(--display);font-size:12px;font-weight:700;color:var(--text2);transition:all .15s;}
+  .detail-tab.active{background:var(--surface);color:var(--purple);box-shadow:0 1px 4px rgba(108,59,232,.12);}
+  .detail-tab-content{display:none;}
+  .detail-tab-content.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Conectando con la nube...</div>
+</div>
+
+<!-- ONBOARDING: pedir nombre -->
+<div class="onboard-overlay" id="onboard-overlay">
+  <div class="onboard-box">
+    <div class="onboard-logo">🖐 Handy POS Tracker</div>
+    <div class="onboard-title">¡Hola! ¿Cómo te llamás?</div>
+    <div class="onboard-sub">Tu nombre va a quedar registrado en cada acción que hagas dentro del tracker.</div>
+    <input type="text" id="onboard-name" placeholder="Tu nombre..." style="margin-bottom:16px;width:100%;" maxlength="30">
+    <button class="btn-primary" style="width:100%;padding:12px;" onclick="saveUsername()">Entrar al tracker →</button>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="brand-logo">🖐 Handy</div>
+    <div class="brand-divider"></div>
+    <div class="brand-sub">POS TRACKER</div>
+  </div>
+  <div class="header-right">
+    <div class="user-chip" onclick="changeUser()" title="Cambiar nombre">👤 <span id="username-display">—</span></div>
+    <div class="sync-status loading" id="sync-status">Sincronizando</div>
+    <div class="header-tabs">
+      <button class="tab-btn active" id="tab-sol" onclick="switchTab('solicitudes')">📋 Solicitudes</button>
+      <button class="tab-btn" id="tab-ter" onclick="switchTab('terminales')">📡 Terminales</button>
+      <button class="tab-btn" id="tab-aud" onclick="switchTab('auditoria')">🔍 Auditoría</button>
+    </div>
+  </div>
+</div>
+
+<!-- SOLICITUDES -->
+<div class="view active" id="view-solicitudes">
+  <div class="stats-bar" id="stats-bar"></div>
+  <div class="toolbar">
+    <input class="search-box" placeholder="🔍  Buscar por comercio, ticket o dirección..." id="search-input" oninput="renderTable()">
+    <select class="filter-select" id="filter-status" onchange="renderTable()">
+      <option value="">Todos los estados</option>
+      <option value="recibida">Recibida</option>
+      <option value="preparacion">En preparación</option>
+      <option value="despacho">Lista para despacho</option>
+      <option value="enviada">Enviada</option>
+      <option value="entregada">Entregada</option>
+    </select>
+    <button class="btn-primary" onclick="openNewSolicitud()">＋ Nueva solicitud</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ticket</th><th>Comercio</th><th>Contacto</th><th>Dirección</th><th>POS</th><th>Modelo</th><th>Seriados</th><th>Estado</th><th>Último cambio</th><th></th></tr></thead>
+      <tbody id="solicitudes-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TERMINALES -->
+<div class="view" id="view-terminales">
+  <div class="toolbar">
+    <input class="search-box" placeholder="🔍  Buscar por serie, comercio o ticket..." id="search-terminal" oninput="renderTerminales()">
+    <select class="filter-select" id="filter-t-status" onchange="renderTerminales()">
+      <option value="">Todas</option>
+      <option value="activa">Activas</option>
+      <option value="inactiva">Inactivas</option>
+    </select>
+    <button class="btn-primary" onclick="openNewTerminal()">＋ Registrar terminal</button>
+  </div>
+  <div class="monitor-grid" id="monitor-grid"></div>
+</div>
+
+<!-- AUDITORÍA -->
+<div class="view" id="view-auditoria">
+  <div class="toolbar">
+    <input class="search-box" placeholder="🔍  Buscar por usuario, acción o ticket..." id="search-audit" oninput="renderAuditoria()">
+    <select class="filter-select" id="filter-audit-user" onchange="renderAuditoria()">
+      <option value="">Todos los usuarios</option>
+    </select>
+    <select class="filter-select" id="filter-audit-type" onchange="renderAuditoria()">
+      <option value="">Todos los tipos</option>
+      <option value="creó">Creaciones</option>
+      <option value="cambió">Cambios de estado</option>
+      <option value="agregó">Seriados agregados</option>
+      <option value="editó">Ediciones</option>
+      <option value="eliminó">Eliminaciones</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Solicitud</th><th>Comercio</th></tr></thead>
+      <tbody id="audit-tbody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-sol">
+  <div class="modal">
+    <div class="modal-title"><span id="msol-title">Nueva solicitud</span><button class="modal-close" onclick="closeModal('modal-sol')">×</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nº Ticket Handy</label><input type="text" id="f-ticket" placeholder="HND-00000"></div>
+      <div class="form-group"><label>Cantidad de POS</label><input type="number" id="f-qty" min="1" max="20" value="1" oninput="updateSerialFields()"></div>
+      <div class="form-group full"><label>Nombre del comercio</label><input type="text" id="f-comercio" placeholder="Ej: Farmacia Central"></div>
+      <div class="form-group full"><label>Dirección de envío</label><input type="text" id="f-dir" placeholder="Calle, número, ciudad"></div>
+      <div class="form-group"><label>Nombre de contacto</label><input type="text" id="f-contacto" placeholder="Nombre del contacto"></div>
+      <div class="form-group"><label>Teléfono de contacto</label><input type="text" id="f-telefono" placeholder="Ej: 096 123 456"></div>
+      <div class="form-group"><label>Modelo Android</label><select id="f-modelo"><option value="">— Elegir modelo —</option><option value="950K">950K (con teclado)</option><option value="950S">950S (sin teclado)</option><option value="960K">960K (con teclado)</option></select></div>
+      <div class="form-group full">
+        <label>Números de serie <span id="serial-fields-label" style="color:var(--text3);font-weight:600;text-transform:none;letter-spacing:0">(podés completarlos ahora o después)</span></label>
+        <div id="serial-fields" style="display:flex;flex-direction:column;gap:8px;margin-top:2px;"></div>
+      </div>
+      <div class="form-group full"><label>Notas internas</label><textarea id="f-notas" placeholder="Instrucciones, observaciones del equipo..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-sol')">Cancelar</button>
+      <button class="btn-primary" onclick="saveSolicitud()">Guardar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle solicitud -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal modal-wide">
+    <div class="modal-title"><span id="det-header">—</span><button class="modal-close" onclick="closeModal('modal-detalle')">×</button></div>
+    <div class="stepper" id="det-stepper"></div>
+
+    <div class="detail-tabs">
+      <button class="detail-tab active" onclick="switchDetailTab('info')">📋 Información</button>
+      <button class="detail-tab" onclick="switchDetailTab('seriales')">🔢 Seriados</button>
+      <button class="detail-tab" onclick="switchDetailTab('actividad')">📝 Actividad</button>
+    </div>
+
+    <!-- TAB INFO -->
+    <div class="detail-tab-content active" id="dtab-info">
+      <div id="det-body"></div>
+    </div>
+
+    <!-- TAB SERIALES -->
+    <div class="detail-tab-content" id="dtab-seriales">
+      <div class="detail-section">
+        <div class="detail-section-title">
+          <span>Números de serie</span>
+          <span class="serial-counter" id="serial-counter">0 / 0</span>
+        </div>
+        <div class="serial-list" id="serial-list"></div>
+        <div class="add-serial-row" id="add-serial-row">
+          <input type="text" id="new-serial" placeholder="Ej: SN-12345678" onkeydown="if(event.key==='Enter')addSerial()">
+          <button class="btn-primary" style="padding:9px 16px" onclick="addSerial()">＋ Agregar</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text3);font-style:italic" id="serial-hint"></div>
+      </div>
+      <div style="margin-top:4px;padding:12px 14px;background:var(--purple-light);border-radius:9px;font-size:12px;color:var(--purple);font-weight:600;">
+        💡 Al agregar un seriado se crea automáticamente la terminal en la pestaña <strong>Terminales</strong>, vinculada a esta solicitud.
+      </div>
+    </div>
+
+    <!-- TAB ACTIVIDAD -->
+    <div class="detail-tab-content" id="dtab-actividad">
+      <div class="detail-section">
+        <div class="detail-section-title">Historial de cambios</div>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+    </div>
+
+    <div class="confirm-box" id="delete-confirm">
+      ⚠️ ¿Eliminar esta solicitud? También se eliminarán las terminales vinculadas.
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-secondary" onclick="document.getElementById('delete-confirm').classList.remove('show')">Cancelar</button>
+        <button class="btn-danger" onclick="confirmDelete()">Sí, eliminar</button>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="document.getElementById('delete-confirm').classList.toggle('show')">Eliminar</button>
+      <button class="btn-secondary" onclick="closeModal('modal-detalle')">Cerrar</button>
+      <button class="btn-primary" onclick="advanceStatus()">Avanzar estado →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nueva terminal manual -->
+<div class="modal-overlay" id="modal-terminal">
+  <div class="modal">
+    <div class="modal-title"><span>Registrar terminal manual</span><button class="modal-close" onclick="closeModal('modal-terminal')">×</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nº de serie</label><input type="text" id="t-serial" placeholder="SN-XXXXXXXX"></div>
+      <div class="form-group"><label>Estado inicial</label><select id="t-status"><option value="activa">Activa</option><option value="inactiva">Inactiva</option></select></div>
+      <div class="form-group full"><label>Comercio asignado</label><input type="text" id="t-comercio" placeholder="Nombre del comercio"></div>
+      <div class="form-group full"><label>Dirección / Ubicación</label><input type="text" id="t-dir" placeholder="Dirección del comercio"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-terminal')">Cancelar</button>
+      <button class="btn-primary" onclick="saveTerminal()">Registrar terminal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle terminal -->
+<div class="modal-overlay" id="modal-tdet">
+  <div class="modal">
+    <div class="modal-title"><span id="td-header">—</span><button class="modal-close" onclick="closeModal('modal-tdet')">×</button></div>
+    <div id="td-body"></div>
+    <div class="detail-section">
+      <div class="detail-section-title">Registrar incidente</div>
+      <div class="add-issue-row">
+        <input type="text" id="issue-text" placeholder="Descripción del problema...">
+        <select class="filter-select" id="issue-sev" style="padding:9px 10px"><option value="info">Info</option><option value="medio">Medio</option><option value="alto">Alto</option></select>
+        <button class="btn-primary" style="padding:9px 14px" onclick="addIssue()">＋</button>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Historial de incidentes</div>
+      <div id="td-history"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="toggleTerminalStatus('inactiva')">Marcar inactiva</button>
+      <button class="btn-primary" onclick="toggleTerminalStatus('activa')">Marcar activa</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+const API_KEY = '$2a$10$zbY2YHwokGyLPXmHJrOT0etbO5Thnw4VJoNWWpEOjrdmS1oEmR7le';
+const BIN_ID  = '6a1861c0ddf5aa59f7706f85';
+localStorage.setItem('handy_bin_id', BIN_ID);
+const JSONBIN_URL = 'https://api.jsonbin.io/v3';
+
+let solicitudes = [], terminales = [];
+let editingId = null, detailId = null, tDetailId = null;
+let currentUser = localStorage.getItem('handy_username') || '';
+
+const STATUSES = ['recibida','preparacion','despacho','enviada','entregada'];
+const STATUS_LABELS = {recibida:'Recibida',preparacion:'En preparación',despacho:'Lista p/ despacho',enviada:'Enviada',entregada:'Entregada'};
+const STATUS_CLASS  = {recibida:'s-recibida',preparacion:'s-preparacion',despacho:'s-despacho',enviada:'s-enviada',entregada:'s-entregada'};
+
+// ── USUARIO ───────────────────────────────────────────────
+function initUser() {
+  if (!currentUser) {
+    document.getElementById('onboard-overlay').classList.remove('hidden');
+  } else {
+    document.getElementById('onboard-overlay').classList.add('hidden');
+    document.getElementById('username-display').textContent = currentUser;
+    syncFromCloud();
+  }
+}
+function saveUsername() {
+  const name = document.getElementById('onboard-name').value.trim();
+  if (!name) { alert('Por favor ingresá tu nombre.'); return; }
+  currentUser = name;
+  localStorage.setItem('handy_username', name);
+  document.getElementById('username-display').textContent = name;
+  document.getElementById('onboard-overlay').classList.add('hidden');
+  syncFromCloud();
+}
+function changeUser() {
+  if (confirm('¿Cambiar de usuario?')) {
+    localStorage.removeItem('handy_username');
+    currentUser = '';
+    document.getElementById('onboard-overlay').classList.remove('hidden');
+    document.getElementById('onboard-name').value = '';
+  }
+}
+document.getElementById('onboard-name').addEventListener('keydown', e => { if(e.key==='Enter') saveUsername(); });
+
+// ── JSONBIN ───────────────────────────────────────────────
+async function readBin() {
+  const res = await fetch(`${JSONBIN_URL}/b/${BIN_ID}/latest`, { headers:{'X-Master-Key':API_KEY} });
+  const data = await res.json();
+  return data.record;
+}
+async function writeBin(record) {
+  await fetch(`${JSONBIN_URL}/b/${BIN_ID}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+    body:JSON.stringify(record)
+  });
+}
+async function syncFromCloud() {
+  setSyncStatus('loading','Sincronizando');
+  try {
+    const record = await readBin();
+    solicitudes = record.solicitudes || [];
+    terminales  = record.terminales  || [];
+    setSyncStatus('ok','Conectado');
+  } catch(e) {
+    setSyncStatus('error','Sin conexión');
+    solicitudes = JSON.parse(localStorage.getItem('handy_sol_bk')||'[]');
+    terminales  = JSON.parse(localStorage.getItem('handy_ter_bk')||'[]');
+  }
+  hideLoading();
+  renderAll();
+}
+async function saveToCloud() {
+  setSyncStatus('loading','Guardando');
+  localStorage.setItem('handy_sol_bk', JSON.stringify(solicitudes));
+  localStorage.setItem('handy_ter_bk', JSON.stringify(terminales));
+  try {
+    await writeBin({solicitudes, terminales});
+    setSyncStatus('ok','Guardado ✓');
+    setTimeout(()=>setSyncStatus('ok','Conectado'),2000);
+  } catch(e) { setSyncStatus('error','Error al guardar'); }
+}
+setInterval(async()=>{
+  if(!currentUser) return;
+  try {
+    const record = await readBin();
+    solicitudes = record.solicitudes||[];
+    terminales  = record.terminales||[];
+    renderAll(); setSyncStatus('ok','Conectado');
+  } catch{}
+}, 30000);
+
+function setSyncStatus(type,text){const el=document.getElementById('sync-status');el.className='sync-status '+type;el.textContent=text;}
+function hideLoading(){document.getElementById('loading-overlay').classList.add('hidden');}
+function renderAll(){renderStats();renderTable();renderTerminales();}
+
+function getAllEvents(){
+  const events=[];
+  solicitudes.forEach(s=>{
+    (s.actividad||[]).forEach(a=>{
+      events.push({date:a.date,user:a.user,action:a.action,ticket:s.ticket,comercio:s.comercio,solId:s.id});
+    });
+  });
+  return events.sort((a,b)=>b.date-a.date);
+}
+
+function getActionTag(action){
+  if(action.includes('creó')) return '<span class="audit-tag tag-creo">Creación</span>';
+  if(action.includes('cambió')) return '<span class="audit-tag tag-estado">Estado</span>';
+  if(action.includes('agregó')) return '<span class="audit-tag tag-serial">Seriado</span>';
+  if(action.includes('eliminó')) return '<span class="audit-tag tag-elimino">Eliminación</span>';
+  if(action.includes('editó')) return '<span class="audit-tag tag-edito">Edición</span>';
+  return '<span class="audit-tag tag-edito">Acción</span>';
+}
+
+function renderAuditoria(){
+  const events=getAllEvents();
+  // poblar filtro de usuarios
+  const users=[...new Set(events.map(e=>e.user))];
+  const userFilter=document.getElementById('filter-audit-user');
+  const currentUserFilter=userFilter.value;
+  userFilter.innerHTML='<option value="">Todos los usuarios</option>'+users.map(u=>`<option value="${u}" ${u===currentUserFilter?'selected':''}>${u}</option>`).join('');
+
+  const q=(document.getElementById('search-audit').value||'').toLowerCase();
+  const fu=userFilter.value;
+  const ft=document.getElementById('filter-audit-type').value;
+
+  const filtered=events.filter(e=>{
+    const m=!q||e.user.toLowerCase().includes(q)||e.action.toLowerCase().includes(q)||e.ticket.toLowerCase().includes(q)||e.comercio.toLowerCase().includes(q);
+    const mu=!fu||e.user===fu;
+    const mt=!ft||e.action.includes(ft);
+    return m&&mu&&mt;
+  });
+
+  const tbody=document.getElementById('audit-tbody');
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state"><span>🔍</span>Sin registros que mostrar</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML=filtered.map(e=>`
+    <tr onclick="openDetail('${e.solId}')" style="cursor:pointer">
+      <td style="font-family:var(--display);font-size:12px;color:var(--text2);white-space:nowrap">${fmtDateFull(e.date)}</td>
+      <td><div class="audit-user-chip"><div class="audit-avatar">${e.user.charAt(0).toUpperCase()}</div>${e.user}</div></td>
+      <td><div style="display:flex;align-items:center;gap:8px">${getActionTag(e.action)}<span class="audit-action">${e.action}</span></div></td>
+      <td><span class="ticket-id">${e.ticket}</span></td>
+      <td style="font-weight:600">${e.comercio}</td>
+    </tr>`).join('');
+}
+
+function fmtDateFull(ts){
+  const d=new Date(ts);
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab.slice(0,3)).classList.add('active');
+  if(tab==='auditoria') renderAuditoria();
+}
+function switchDetailTab(tab){
+  document.querySelectorAll('.detail-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.detail-tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('dtab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── STATS ─────────────────────────────────────────────────
+function renderStats(){
+  const c={}; STATUSES.forEach(s=>c[s]=0);
+  solicitudes.forEach(s=>{if(c[s.status]!==undefined)c[s.status]++;});
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value purple">${solicitudes.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Recibidas</div><div class="stat-value blue">${c.recibida}</div></div>
+    <div class="stat-card"><div class="stat-label">En preparación</div><div class="stat-value orange">${c.preparacion}</div></div>
+    <div class="stat-card"><div class="stat-label">En despacho</div><div class="stat-value purple">${c.despacho}</div></div>
+    <div class="stat-card"><div class="stat-label">Entregadas</div><div class="stat-value green">${c.entregada}</div></div>`;
+}
+
+// ── TABLA ─────────────────────────────────────────────────
+function renderTable(){
+  const q=(document.getElementById('search-input').value||'').toLowerCase();
+  const fs=document.getElementById('filter-status').value;
+  const filtered=solicitudes.filter(s=>{
+    const m=!q||s.comercio.toLowerCase().includes(q)||s.ticket.toLowerCase().includes(q)||(s.direccion||'').toLowerCase().includes(q);
+    return m&&(!fs||s.status===fs);
+  }).sort((a,b)=>b.created-a.created);
+  const tbody=document.getElementById('solicitudes-tbody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><span>📭</span>Sin solicitudes que mostrar</div></td></tr>`;return;}
+  tbody.innerHTML=filtered.map(s=>{
+    const seriales=s.seriales||[];
+    const qty=s.qty||1;
+    const scClass=seriales.length===0?'empty':seriales.length>=qty?'done':'partial';
+    const lastAct=s.actividad&&s.actividad.length?s.actividad[s.actividad.length-1]:null;
+    return `<tr onclick="openDetail('${s.id}')">
+      <td><span class="ticket-id">${s.ticket}</span></td>
+      <td><span class="comercio-name">${s.comercio}</span></td>
+      <td style="color:var(--text2)">${s.contacto||'—'}${s.telefono?`<br><span style="font-size:11px">${s.telefono}</span>`:''}</td>
+      <td style="color:var(--text2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.direccion}">${s.direccion}</td>
+      <td><span class="qty-badge">${qty}</span></td>
+      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'950K'}</td>
+      <td><span class="serial-progress ${scClass}">${seriales.length}/${qty} SN</span></td>
+      <td><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${lastAct?`<strong style="color:var(--black)">${lastAct.user}</strong><br>${fmtDate(lastAct.date)}`:'—'}</td>
+      <td onclick="event.stopPropagation()"><button class="action-btn" onclick="openEditSolicitud('${s.id}')">Editar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function fmtDate(ts){const d=new Date(ts);return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function pad(n){return String(n).padStart(2,'0');}
+
+// ── NUEVA / EDITAR SOLICITUD ──────────────────────────────
+function updateSerialFields(){
+  const qty=parseInt(document.getElementById('f-qty').value)||1;
+  const container=document.getElementById('serial-fields');
+  const current=container.querySelectorAll('input');
+  const currentVals=Array.from(current).map(i=>i.value);
+  container.innerHTML='';
+  for(let i=0;i<qty;i++){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;';
+    row.innerHTML=`<span style="font-family:var(--display);font-size:11px;font-weight:800;color:var(--purple);min-width:20px">#${i+1}</span>
+      <input type="text" placeholder="Nº de serie (opcional)" value="${currentVals[i]||''}" style="flex:1" data-serial-idx="${i}">`;
+    container.appendChild(row);
+  }
+}
+
+function openNewSolicitud(){
+  editingId=null;
+  document.getElementById('msol-title').textContent='Nueva solicitud';
+  ['f-ticket','f-comercio','f-dir','f-contacto','f-telefono','f-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-qty').value=1;
+  document.getElementById('f-modelo').value='';
+  // limpiar campos de serie antes de regenerar
+  document.getElementById('serial-fields').innerHTML='';
+  updateSerialFields();
+  document.getElementById('modal-sol').classList.add('open');
+}
+function openEditSolicitud(id){
+  const s=solicitudes.find(x=>x.id===id);if(!s)return;
+  editingId=id;
+  document.getElementById('msol-title').textContent='Editar solicitud';
+  document.getElementById('f-ticket').value=s.ticket;
+  document.getElementById('f-comercio').value=s.comercio;
+  document.getElementById('f-dir').value=s.direccion;
+  document.getElementById('f-contacto').value=s.contacto;
+  document.getElementById('f-telefono').value=s.telefono||'';
+  document.getElementById('f-qty').value=s.qty;
+  document.getElementById('f-modelo').value=s.modelo||'950K';
+  document.getElementById('f-notas').value=s.notas||'';
+  // pre-cargar seriados existentes
+  const container=document.getElementById('serial-fields');
+  container.innerHTML='';
+  const qty=s.qty||1;
+  for(let i=0;i<qty;i++){
+    const sn=(s.seriales&&s.seriales[i])?s.seriales[i].serial:'';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;';
+    row.innerHTML=`<span style="font-family:var(--display);font-size:11px;font-weight:800;color:var(--purple);min-width:20px">#${i+1}</span>
+      <input type="text" placeholder="Nº de serie (opcional)" value="${sn}" style="flex:1" data-serial-idx="${i}">`;
+    container.appendChild(row);
+  }
+  document.getElementById('modal-sol').classList.add('open');
+}
+async function saveSolicitud(){
+  const ticket=document.getElementById('f-ticket').value.trim();
+  const comercio=document.getElementById('f-comercio').value.trim();
+  const direccion=document.getElementById('f-dir').value.trim();
+  if(!ticket||!comercio||!direccion){alert('Ticket, comercio y dirección son obligatorios.');return;}
+  if(!document.getElementById('f-modelo').value){alert('Por favor elegí un modelo de Android.');return;}
+  const qty=parseInt(document.getElementById('f-qty').value)||1;
+  // leer campos de serie
+  const serialInputs=document.getElementById('serial-fields').querySelectorAll('input');
+  const nuevosSeriales=Array.from(serialInputs).map(i=>i.value.trim()).filter(v=>v!=='');
+
+  if(editingId){
+    const idx=solicitudes.findIndex(x=>x.id===editingId);
+    const s=solicitudes[idx];
+    // detectar seriados nuevos que no estaban antes
+    const anteriores=(s.seriales||[]).map(x=>x.serial.toLowerCase());
+    nuevosSeriales.forEach(sn=>{
+      if(!anteriores.includes(sn.toLowerCase())){
+        if(!s.seriales) s.seriales=[];
+        s.seriales.push({serial:sn,user:currentUser,date:Date.now()});
+        logActivity(editingId,`agregó el seriado ${sn}`);
+        // crear terminal si no existe
+        if(!terminales.find(t=>t.serial.toLowerCase()===sn.toLowerCase())){
+          terminales.push({id:'TRM-'+Date.now(),serial:sn,comercio,direccion,status:'inactiva',issues:[],solicitudId:editingId,ticket,modelo:document.getElementById('f-modelo').value,created:Date.now()});
+        }
+      }
+    });
+    const modeloActual=document.getElementById('f-modelo').value;
+    solicitudes[idx]={...s,ticket,comercio,direccion,
+      contacto:document.getElementById('f-contacto').value.trim(),telefono:document.getElementById('f-telefono').value.trim(),
+      qty,modelo:modeloActual,
+      notas:document.getElementById('f-notas').value.trim()};
+    logActivity(editingId,'editó la solicitud');
+    // actualizar terminales vinculadas con los nuevos datos
+    terminales.forEach((t,i)=>{
+      if(t.solicitudId===editingId){
+        terminales[i]={...t,comercio,direccion,ticket,modelo:modeloActual};
+      }
+    });
+  } else {
+    const id='SOL-'+Date.now();
+    const seriales=nuevosSeriales.map(sn=>({serial:sn,user:currentUser,date:Date.now()}));
+    solicitudes.push({id,ticket,comercio,direccion,
+      contacto:document.getElementById('f-contacto').value.trim(),telefono:document.getElementById('f-telefono').value.trim(),
+      qty,modelo:document.getElementById('f-modelo').value,
+      notas:document.getElementById('f-notas').value.trim(),
+      status:'recibida',seriales,actividad:[],created:Date.now()});
+    logActivity(id,'creó la solicitud');
+    // crear terminales para cada seriado ingresado
+    nuevosSeriales.forEach(sn=>{
+      if(!terminales.find(t=>t.serial.toLowerCase()===sn.toLowerCase())){
+        terminales.push({id:'TRM-'+Date.now(),serial:sn,comercio,direccion,status:'inactiva',issues:[],solicitudId:id,ticket,created:Date.now()});
+      }
+    });
+  }
+  closeModal('modal-sol'); renderAll();
+  await saveToCloud();
+}
+
+// ── DETALLE SOLICITUD ─────────────────────────────────────
+function openDetail(id){
+  const s=solicitudes.find(x=>x.id===id);if(!s)return;
+  detailId=id;
+  document.getElementById('delete-confirm').classList.remove('show');
+  // reset tabs
+  document.querySelectorAll('.detail-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('.detail-tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));
+
+  document.getElementById('det-header').textContent=s.ticket+' · '+s.comercio;
+  const si=STATUSES.indexOf(s.status);
+  document.getElementById('det-stepper').innerHTML=STATUSES.map((st,i)=>
+    `<div class="step ${i<si?'done':i===si?'current':''}" onclick="setStatus('${id}','${st}')">${STATUS_LABELS[st]}</div>`
+  ).join('');
+
+  // Info tab
+  document.getElementById('det-body').innerHTML=`
+    <div class="detail-section">
+      <div class="detail-section-title">Información de la solicitud</div>
+      <div class="detail-row"><span class="detail-key">Ticket Handy</span><span class="detail-val" style="color:var(--purple)">${s.ticket}</span></div>
+      <div class="detail-row"><span class="detail-key">Comercio</span><span class="detail-val">${s.comercio}</span></div>
+      <div class="detail-row"><span class="detail-key">Contacto</span><span class="detail-val">${s.contacto||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Teléfono</span><span class="detail-val">${s.telefono||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val" style="max-width:300px">${s.direccion}</span></div>
+      <div class="detail-row"><span class="detail-key">Cantidad POS</span><span class="detail-val">${s.qty}</span></div>
+      <div class="detail-row"><span class="detail-key">Modelo</span>${s.modelo||'950K'}</span></div>
+      <div class="detail-row"><span class="detail-key">Estado actual</span><span class="detail-val"><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></span></div>
+      ${s.notas?`<div style="margin-top:8px"><div class="detail-key" style="margin-bottom:6px">Notas internas</div><div class="notas-box">${s.notas}</div></div>`:''}
+    </div>`;
+
+  // Seriales tab
+  renderSeriales(s);
+
+  // Actividad tab
+  renderActividad(s);
+
+  document.getElementById('modal-detalle').classList.add('open');
+}
+
+function renderSeriales(s){
+  const seriales=s.seriales||[];
+  const qty=s.qty||1;
+  const remaining=qty-seriales.length;
+  const counterClass=seriales.length===0?'sc-empty':seriales.length>=qty?'sc-ok':'sc-partial';
+  document.getElementById('serial-counter').className='serial-counter '+counterClass;
+  document.getElementById('serial-counter').textContent=`${seriales.length} / ${qty}`;
+  document.getElementById('serial-hint').textContent=remaining>0?`Faltan ${remaining} seriado${remaining>1?'s':''}`:seriales.length>=qty?'✓ Todos los seriados cargados':'';
+  document.getElementById('serial-list').innerHTML=seriales.length?seriales.map((sn,i)=>`
+    <div class="serial-item">
+      <div><div class="sn">${sn.serial}</div><div class="sn-meta">Cargado por ${sn.user} · ${fmtDate(sn.date)}</div></div>
+      <button class="sn-del" onclick="removeSerial(${i})" title="Eliminar">×</button>
+    </div>`).join(''):`<div style="color:var(--text3);font-size:12px;padding:8px 0">Ningún seriado cargado aún</div>`;
+  // mostrar/ocultar input si ya están todos
+  document.getElementById('add-serial-row').style.display=seriales.length>=qty?'none':'flex';
+}
+
+function renderActividad(s){
+  const acts=s.actividad||[];
+  document.getElementById('activity-list').innerHTML=acts.length?acts.slice().reverse().map(a=>`
+    <div class="activity-item">
+      <div class="activity-avatar">${a.user.charAt(0).toUpperCase()}</div>
+      <div class="activity-body"><span class="activity-user">${a.user}</span> <span class="activity-action">${a.action}</span></div>
+      <div class="activity-date">${fmtDate(a.date)}</div>
+    </div>`).join(''):`<div style="color:var(--text3);font-size:12px;padding:8px 0">Sin actividad registrada</div>`;
+}
+
+function logActivity(solId, action){
+  const idx=solicitudes.findIndex(x=>x.id===solId);if(idx<0)return;
+  if(!solicitudes[idx].actividad) solicitudes[idx].actividad=[];
+  solicitudes[idx].actividad.push({user:currentUser,action,date:Date.now()});
+}
+
+async function addSerial(){
+  const val=document.getElementById('new-serial').value.trim();
+  if(!val)return;
+  const idx=solicitudes.findIndex(x=>x.id===detailId);if(idx<0)return;
+  const s=solicitudes[idx];
+  if(!s.seriales) s.seriales=[];
+  // verificar duplicado
+  if(s.seriales.find(x=>x.serial.toLowerCase()===val.toLowerCase())){alert('Ese número de serie ya fue cargado.');return;}
+  s.seriales.push({serial:val,user:currentUser,date:Date.now()});
+  logActivity(detailId,`agregó el seriado ${val}`);
+  document.getElementById('new-serial').value='';
+  // crear terminal automáticamente
+  const trmExists=terminales.find(t=>t.serial.toLowerCase()===val.toLowerCase());
+  if(!trmExists){
+    terminales.push({
+      id:'TRM-'+Date.now(),
+      serial:val,
+      comercio:s.comercio,
+      direccion:s.direccion,
+      status:'inactiva',
+      issues:[],
+      solicitudId:s.id,
+      ticket:s.ticket,
+      created:Date.now()
+    });
+  }
+  renderSeriales(solicitudes[idx]);
+  renderActividad(solicitudes[idx]);
+  renderTerminales();
+  await saveToCloud();
+}
+
+async function removeSerial(i){
+  const idx=solicitudes.findIndex(x=>x.id===detailId);if(idx<0)return;
+  const sn=solicitudes[idx].seriales[i].serial;
+  solicitudes[idx].seriales.splice(i,1);
+  logActivity(detailId,`eliminó el seriado ${sn}`);
+  // eliminar terminal vinculada
+  terminales=terminales.filter(t=>!(t.serial===sn&&t.solicitudId===detailId));
+  renderSeriales(solicitudes[idx]);
+  renderActividad(solicitudes[idx]);
+  renderTerminales();
+  await saveToCloud();
+}
+
+async function setStatus(id,newStatus){
+  const idx=solicitudes.findIndex(x=>x.id===id);if(idx<0)return;
+  const prev=STATUS_LABELS[solicitudes[idx].status];
+  solicitudes[idx].status=newStatus;
+  logActivity(id,`cambió el estado de "${prev}" a "${STATUS_LABELS[newStatus]}"`);
+  renderAll(); openDetail(id);
+  await saveToCloud();
+}
+async function advanceStatus(){
+  const s=solicitudes.find(x=>x.id===detailId);if(!s)return;
+  const si=STATUSES.indexOf(s.status);
+  if(si<STATUSES.length-1) await setStatus(detailId,STATUSES[si+1]);
+}
+async function confirmDelete(){
+  const s=solicitudes.find(x=>x.id===detailId);
+  if(s&&s.seriales&&s.seriales.length){
+    terminales=terminales.filter(t=>t.solicitudId!==detailId);
+  }
+  solicitudes=solicitudes.filter(x=>x.id!==detailId);
+  closeModal('modal-detalle'); renderAll();
+  await saveToCloud();
+}
+
+// ── TERMINALES ────────────────────────────────────────────
+function renderTerminales(){
+  const q=(document.getElementById('search-terminal').value||'').toLowerCase();
+  const fs=document.getElementById('filter-t-status').value;
+  const filtered=terminales.filter(t=>{
+    const m=!q||t.serial.toLowerCase().includes(q)||t.comercio.toLowerCase().includes(q)||(t.ticket||'').toLowerCase().includes(q);
+    return m&&(!fs||t.status===fs);
+  });
+  const grid=document.getElementById('monitor-grid');
+  if(!filtered.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><span>📡</span>Sin terminales registradas</div>`;return;}
+  grid.innerHTML=filtered.map(t=>{
+    const issues=(t.issues||[]).length;
+    return `<div class="terminal-card t-${t.status}" onclick="openTDetail('${t.id}')">
+      <div class="terminal-header">
+        <span class="terminal-serial">${t.serial}</span>
+        <span class="active-dot ${t.status==='activa'?'on':'off'}">${t.status==='activa'?'Activa':'Inactiva'}</span>
+      </div>
+      ${t.ticket?`<div style="margin-bottom:8px"><span class="terminal-ticket">📋 ${t.ticket}</span></div>`:''}
+      <div class="terminal-comercio">${t.comercio}</div>
+      <div class="terminal-info">${t.direccion||'Sin dirección'}</div>
+      <div class="terminal-footer">
+        <span class="issue-count ${issues>0?'has':'none'}">${issues>0?'⚠ '+issues+' incidente'+(issues>1?'s':''):'✓ Sin incidentes'}</span>
+        ${t.modelo||'950K'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNewTerminal(){
+  ['t-serial','t-comercio','t-dir'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-status').value='activa';
+  document.getElementById('modal-terminal').classList.add('open');
+}
+async function saveTerminal(){
+  const serial=document.getElementById('t-serial').value.trim();
+  const comercio=document.getElementById('t-comercio').value.trim();
+  if(!serial||!comercio){alert('Serie y comercio son obligatorios.');return;}
+  terminales.push({id:'TRM-'+Date.now(),serial,comercio,
+    direccion:document.getElementById('t-dir').value.trim(),
+    status:document.getElementById('t-status').value,issues:[],created:Date.now()});
+  closeModal('modal-terminal'); renderTerminales();
+  await saveToCloud();
+}
+function openTDetail(id){
+  const t=terminales.find(x=>x.id===id);if(!t)return;
+  tDetailId=id;
+  document.getElementById('td-header').textContent=t.serial+' · '+t.comercio;
+  document.getElementById('td-body').innerHTML=`
+    <div class="detail-section">
+      <div class="detail-row"><span class="detail-key">Número de serie</span><span class="detail-val" style="color:var(--purple)">${t.serial}</span></div>
+      ${t.ticket?`<div class="detail-row"><span class="detail-key">Solicitud vinculada</span><span class="detail-val" style="cursor:pointer;color:var(--purple);text-decoration:underline" onclick="closeModal('modal-tdet');openDetail('${t.solicitudId}')">${t.ticket}</span></div>`:''}
+      <div class="detail-row"><span class="detail-key">Comercio</span><span class="detail-val">${t.comercio}</span></div>
+      <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val">${t.direccion||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val"><span class="active-dot ${t.status==='activa'?'on':'off'}">${t.status==='activa'?'Activa':'Inactiva'}</span></span></div>
+      <div class="detail-row"><span class="detail-key">Modelo</span>${s.modelo||'950K'}</span></div>
+    </div>`;
+  document.getElementById('issue-text').value='';
+  const issues=(t.issues||[]);
+  document.getElementById('td-history').innerHTML=issues.length
+    ?issues.slice().reverse().map(i=>`<div class="history-item"><span class="h-date">${fmtDate(i.date)}</span><span class="h-text">${i.text}</span><span class="h-sev sev-${i.sev}">${i.sev}</span></div>`).join('')
+    :`<div style="color:var(--text3);font-size:12px;padding:8px 0">Sin incidentes registrados</div>`;
+  document.getElementById('modal-tdet').classList.add('open');
+}
+async function addIssue(){
+  const text=document.getElementById('issue-text').value.trim();if(!text)return;
+  const sev=document.getElementById('issue-sev').value;
+  const idx=terminales.findIndex(x=>x.id===tDetailId);if(idx<0)return;
+  if(!terminales[idx].issues)terminales[idx].issues=[];
+  terminales[idx].issues.push({text,sev,user:currentUser,date:Date.now()});
+  openTDetail(tDetailId); renderTerminales();
+  await saveToCloud();
+}
+async function toggleTerminalStatus(status){
+  const idx=terminales.findIndex(x=>x.id===tDetailId);if(idx<0)return;
+  terminales[idx].status=status;
+  openTDetail(tDetailId); renderTerminales();
+  await saveToCloud();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ── INIT ──────────────────────────────────────────────────
+initUser();
+</script>
+</body>
+</html>
