@@ -204,7 +204,7 @@
   .tag-edito{background:rgba(42,127,255,.1);color:var(--blue);}
   .tag-elimino{background:rgba(255,61,107,.1);color:var(--red);}
 
-position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(4px);}
+  .loading-overlay{position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(4px);}
   .loading-overlay.hidden{display:none;}
   .hidden{display:none !important;}
   .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
@@ -377,6 +377,15 @@ position:fixed;inset:0;background:rgba(244,243,250,.85);z-index:300;display:flex
       <div class="form-group"><label>Nombre de contacto</label><input type="text" id="f-contacto" placeholder="Nombre del contacto"></div>
       <div class="form-group"><label>Teléfono de contacto</label><input type="text" id="f-telefono" placeholder="Ej: 096 123 456"></div>
       <div class="form-group"><label>Modelo Android</label><select id="f-modelo"><option value="">— Elegir modelo —</option><option value="950K">950K (con teclado)</option><option value="950S">950S (sin teclado)</option><option value="960K">960K (con teclado)</option></select></div>
+      <div class="form-group full">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="f-tiene-app" onchange="toggleAppField()" style="width:16px;height:16px;accent-color:var(--purple);cursor:pointer">
+          Va con aplicación de tercero
+        </label>
+        <div id="app-field" style="display:none;margin-top:8px">
+          <select id="f-app"><option value="">— Elegir aplicación —</option><option value="SISNET">SISNET</option><option value="SOFTRESTAURANT">SOFTRESTAURANT</option><option value="GSOFT">GSOFT</option><option value="HIOPOS">HIOPOS</option></select>
+        </div>
+      </div>
       <div class="form-group full">
         <label>Números de serie <span id="serial-fields-label" style="color:var(--text3);font-weight:600;text-transform:none;letter-spacing:0">(podés completarlos ahora o después)</span></label>
         <div id="serial-fields" style="display:flex;flex-direction:column;gap:8px;margin-top:2px;"></div>
@@ -656,7 +665,10 @@ async function saveToCloud() {
   localStorage.setItem('handy_sol_bk', JSON.stringify(solicitudes));
   localStorage.setItem('handy_ter_bk', JSON.stringify(terminales));
   try {
-    await writeBin({solicitudes, terminales});
+    // leer primero para no pisar passwords ni otros campos
+    let record = {};
+    try { record = await readBin(); } catch(e){}
+    await writeBin({...record, solicitudes, terminales});
     setSyncStatus('ok','Guardado ✓');
     setTimeout(()=>setSyncStatus('ok','Conectado'),2000);
   } catch(e) { setSyncStatus('error','Error al guardar'); }
@@ -781,7 +793,7 @@ function renderTable(){
       <td style="color:var(--text2)">${s.contacto||'—'}${s.telefono?`<br><span style="font-size:11px">${s.telefono}</span>`:''}</td>
       <td style="color:var(--text2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.direccion}">${s.direccion}</td>
       <td><span class="qty-badge">${qty}</span></td>
-      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'950K'}</td>
+      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'—'}${s.app?'<br><span style="color:var(--orange);font-size:10px">'+s.app+'</span>':''}</td>
       <td><span class="serial-progress ${scClass}">${seriales.length}/${qty} SN</span></td>
       <td><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></td>
       <td style="font-size:11px;color:var(--text2)">${lastAct?`<strong style="color:var(--black)">${lastAct.user}</strong><br>${fmtDate(lastAct.date)}`:'—'}</td>
@@ -794,6 +806,11 @@ function fmtDate(ts){const d=new Date(ts);return `${pad(d.getDate())}/${pad(d.ge
 function pad(n){return String(n).padStart(2,'0');}
 
 // ── NUEVA / EDITAR SOLICITUD ──────────────────────────────
+function toggleAppField(){
+  const tiene = document.getElementById('f-tiene-app').checked;
+  document.getElementById('app-field').style.display = tiene ? 'block' : 'none';
+  if(!tiene) document.getElementById('f-app').value = '';
+}
 function updateSerialFields(){
   const qty=parseInt(document.getElementById('f-qty').value)||1;
   const container=document.getElementById('serial-fields');
@@ -815,6 +832,9 @@ function openNewSolicitud(){
   ['f-ticket','f-comercio','f-dir','f-contacto','f-telefono','f-notas'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-qty').value=1;
   document.getElementById('f-modelo').value='';
+  document.getElementById('f-tiene-app').checked=false;
+  document.getElementById('f-app').value='';
+  document.getElementById('app-field').style.display='none';
   // limpiar campos de serie antes de regenerar
   document.getElementById('serial-fields').innerHTML='';
   updateSerialFields();
@@ -830,7 +850,10 @@ function openEditSolicitud(id){
   document.getElementById('f-contacto').value=s.contacto;
   document.getElementById('f-telefono').value=s.telefono||'';
   document.getElementById('f-qty').value=s.qty;
-  document.getElementById('f-modelo').value=s.modelo||'950K';
+  document.getElementById('f-modelo').value=s.modelo||'';
+  document.getElementById('f-tiene-app').checked=!!s.app;
+  document.getElementById('f-app').value=s.app||'';
+  document.getElementById('app-field').style.display=s.app?'block':'none';
   document.getElementById('f-notas').value=s.notas||'';
   // pre-cargar seriados existentes
   const container=document.getElementById('serial-fields');
@@ -890,7 +913,7 @@ async function saveSolicitud(){
     const seriales=nuevosSeriales.map(sn=>({serial:sn,user:currentUser,date:Date.now()}));
     solicitudes.push({id,ticket,comercio,direccion,
       contacto:document.getElementById('f-contacto').value.trim(),telefono:document.getElementById('f-telefono').value.trim(),
-      qty,modelo:document.getElementById('f-modelo').value,
+      qty,modelo:document.getElementById('f-modelo').value,app:document.getElementById('f-tiene-app').checked?document.getElementById('f-app').value:'',
       notas:document.getElementById('f-notas').value.trim(),
       status:'recibida',seriales,actividad:[],created:Date.now()});
     logActivity(id,'creó la solicitud');
@@ -930,7 +953,7 @@ function openDetail(id){
       <div class="detail-row"><span class="detail-key">Teléfono</span><span class="detail-val">${s.telefono||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val" style="max-width:300px">${s.direccion}</span></div>
       <div class="detail-row"><span class="detail-key">Cantidad POS</span><span class="detail-val">${s.qty}</span></div>
-      <div class="detail-row"><span class="detail-key">Modelo</span>${s.modelo||'950K'}</span></div>
+      <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val" style="color:var(--purple)">${s.modelo||'—'}</span></div>${s.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:var(--orange);font-weight:800">${s.app}</span></div>`:''}</div>
       <div class="detail-row"><span class="detail-key">Estado actual</span><span class="detail-val"><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></span></div>
       ${s.notas?`<div style="margin-top:8px"><div class="detail-key" style="margin-bottom:6px">Notas internas</div><div class="notas-box">${s.notas}</div></div>`:''}
     </div>`;
@@ -1067,7 +1090,7 @@ function renderTerminales(){
       <div class="terminal-info">${t.direccion||'Sin dirección'}</div>
       <div class="terminal-footer">
         <span class="issue-count ${issues>0?'has':'none'}">${issues>0?'⚠ '+issues+' incidente'+(issues>1?'s':''):'✓ Sin incidentes'}</span>
-        ${t.modelo||'950K'}</span>
+        <span style="font-size:10px;font-weight:800;color:var(--purple)">${t.modelo||'—'}</span>
       </div>
     </div>`;
   }).join('');
@@ -1099,7 +1122,8 @@ function openTDetail(id){
       <div class="detail-row"><span class="detail-key">Comercio</span><span class="detail-val">${t.comercio}</span></div>
       <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val">${t.direccion||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val"><span class="active-dot ${t.status==='activa'?'on':'off'}">${t.status==='activa'?'Activa':'Inactiva'}</span></span></div>
-      <div class="detail-row"><span class="detail-key">Modelo</span>${s.modelo||'950K'}</span></div>
+      <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val" style="color:var(--purple)">${t.modelo||'—'}</span></div>
+      ${t.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:var(--orange);font-weight:800">${t.app}</span></div>`:''}
     </div>`;
   document.getElementById('issue-text').value='';
   const issues=(t.issues||[]);
