@@ -506,6 +506,9 @@ const BIN_ID  = '6a1861c0ddf5aa59f7706f85';
 localStorage.setItem('handy_bin_id', BIN_ID);
 const JSONBIN_URL = 'https://api.jsonbin.io/v3';
 
+const APP_COLORS = {'SISNET':'#0091ff','SOFTRESTAURANT':'#00c98d','GSOFT':'#a064ff','HIOPOS':'#ff8c2a'};
+function appColor(app){ return APP_COLORS[app]||'#888'; }
+
 let solicitudes = [], terminales = [];
 let editingId = null, detailId = null, tDetailId = null;
 
@@ -793,7 +796,7 @@ function renderTable(){
       <td style="color:var(--text2)">${s.contacto||'—'}${s.telefono?`<br><span style="font-size:11px">${s.telefono}</span>`:''}</td>
       <td style="color:var(--text2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.direccion}">${s.direccion}</td>
       <td><span class="qty-badge">${qty}</span></td>
-      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'—'}${s.app?`<br><span style="color:${appColor(s.app)};font-size:10px;font-weight:800">${s.app}</span>`:''}</td>
+      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'—'}${s.app?`<br><span style="color:$({'SISNET':'#0091ff','SOFTRESTAURANT':'#00c98d','GSOFT':'#a064ff','HIOPOS':'#ff8c2a'}[s.app]||'#888');font-size:10px;font-weight:800">${s.app}</span>`:''}</td>
       <td><span class="serial-progress ${scClass}">${seriales.length}/${qty} SN</span></td>
       <td><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></td>
       <td style="font-size:11px;color:var(--text2)">${lastAct?`<strong style="color:var(--black)">${lastAct.user}</strong><br>${fmtDate(lastAct.date)}`:'—'}</td>
@@ -806,10 +809,7 @@ function fmtDate(ts){const d=new Date(ts);return `${pad(d.getDate())}/${pad(d.ge
 function pad(n){return String(n).padStart(2,'0');}
 
 // ── NUEVA / EDITAR SOLICITUD ──────────────────────────────
-function appColor(app){
-  const colors={'SISNET':'#0091ff','SOFTRESTAURANT':'#00c98d','GSOFT':'#a064ff','HIOPOS':'#ff8c2a'};
-  return colors[app]||'var(--text2)';
-}
+function toggleAppField(){
   const tiene = document.getElementById('f-tiene-app').checked;
   document.getElementById('app-field').style.display = tiene ? 'block' : 'none';
   if(!tiene) document.getElementById('f-app').value = '';
