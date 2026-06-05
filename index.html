@@ -793,7 +793,7 @@ function renderTable(){
       <td style="color:var(--text2)">${s.contacto||'—'}${s.telefono?`<br><span style="font-size:11px">${s.telefono}</span>`:''}</td>
       <td style="color:var(--text2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.direccion}">${s.direccion}</td>
       <td><span class="qty-badge">${qty}</span></td>
-      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'—'}${s.app?'<br><span style="color:var(--orange);font-size:10px">'+s.app+'</span>':''}</td>
+      <td style="font-size:11px;font-weight:800;color:var(--purple)">${s.modelo||'—'}${s.app?`<br><span style="color:${appColor(s.app)};font-size:10px;font-weight:800">${s.app}</span>`:''}</td>
       <td><span class="serial-progress ${scClass}">${seriales.length}/${qty} SN</span></td>
       <td><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></td>
       <td style="font-size:11px;color:var(--text2)">${lastAct?`<strong style="color:var(--black)">${lastAct.user}</strong><br>${fmtDate(lastAct.date)}`:'—'}</td>
@@ -806,7 +806,10 @@ function fmtDate(ts){const d=new Date(ts);return `${pad(d.getDate())}/${pad(d.ge
 function pad(n){return String(n).padStart(2,'0');}
 
 // ── NUEVA / EDITAR SOLICITUD ──────────────────────────────
-function toggleAppField(){
+function appColor(app){
+  const colors={'SISNET':'#0091ff','SOFTRESTAURANT':'#00c98d','GSOFT':'#a064ff','HIOPOS':'#ff8c2a'};
+  return colors[app]||'var(--text2)';
+}
   const tiene = document.getElementById('f-tiene-app').checked;
   document.getElementById('app-field').style.display = tiene ? 'block' : 'none';
   if(!tiene) document.getElementById('f-app').value = '';
@@ -954,7 +957,7 @@ function openDetail(id){
       <div class="detail-row"><span class="detail-key">Teléfono</span><span class="detail-val">${s.telefono||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val" style="max-width:300px">${s.direccion}</span></div>
       <div class="detail-row"><span class="detail-key">Cantidad POS</span><span class="detail-val">${s.qty}</span></div>
-      <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val" style="color:var(--purple)">${s.modelo||'—'}</span></div>${s.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:var(--orange);font-weight:800">${s.app}</span></div>`:''}</div>
+      <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val" style="color:var(--purple)">${s.modelo||'—'}</span></div>${s.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:${appColor(s.app)};font-weight:800">${s.app}</span></div>`:''}</div>
       <div class="detail-row"><span class="detail-key">Estado actual</span><span class="detail-val"><span class="status-pill ${STATUS_CLASS[s.status]}">${STATUS_LABELS[s.status]}</span></span></div>
       ${s.notas?`<div style="margin-top:8px"><div class="detail-key" style="margin-bottom:6px">Notas internas</div><div class="notas-box">${s.notas}</div></div>`:''}
     </div>`;
@@ -1124,7 +1127,7 @@ function openTDetail(id){
       <div class="detail-row"><span class="detail-key">Dirección</span><span class="detail-val">${t.direccion||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Estado</span><span class="detail-val"><span class="active-dot ${t.status==='activa'?'on':'off'}">${t.status==='activa'?'Activa':'Inactiva'}</span></span></div>
       <div class="detail-row"><span class="detail-key">Modelo</span><span class="detail-val" style="color:var(--purple)">${t.modelo||'—'}</span></div>
-      ${t.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:var(--orange);font-weight:800">${t.app}</span></div>`:''}
+      ${t.app?`<div class="detail-row"><span class="detail-key">Aplicación</span><span class="detail-val" style="color:${appColor(t.app)};font-weight:800">${t.app}</span></div>`:''}
     </div>`;
   document.getElementById('issue-text').value='';
   const issues=(t.issues||[]);
